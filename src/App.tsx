@@ -58,8 +58,34 @@ const ICON_OPTIONS = [
   { value: '🧵', label: 'Нити' },
 ];
 
-export const BG_VERTICAL = '/images/luxury-background.jpg';
-export const BG_HORIZONTAL = '/images/bg-horizontal.jpg';
+// CSS backgrounds instead of images for reliable html2canvas capture
+export const CSS_BG_VERTICAL = `
+  radial-gradient(ellipse at 50% 0%, rgba(251, 191, 36, 0.4) 0%, transparent 50%),
+  radial-gradient(ellipse at 80% 20%, rgba(245, 158, 11, 0.3) 0%, transparent 40%),
+  radial-gradient(ellipse at 20% 80%, rgba(251, 191, 36, 0.25) 0%, transparent 45%),
+  radial-gradient(ellipse at 50% 100%, rgba(234, 179, 8, 0.35) 0%, transparent 50%),
+  linear-gradient(180deg, 
+    rgba(15, 10, 30, 0.95) 0%, 
+    rgba(26, 18, 50, 0.9) 30%, 
+    rgba(45, 30, 80, 0.85) 60%, 
+    rgba(26, 18, 50, 0.9) 80%, 
+    rgba(15, 10, 30, 0.95) 100%
+  )
+`;
+
+export const CSS_BG_HORIZONTAL = `
+  radial-gradient(ellipse at 10% 50%, rgba(251, 191, 36, 0.3) 0%, transparent 40%),
+  radial-gradient(ellipse at 90% 50%, rgba(245, 158, 11, 0.3) 0%, transparent 40%),
+  radial-gradient(ellipse at 50% 0%, rgba(251, 191, 36, 0.25) 0%, transparent 50%),
+  radial-gradient(ellipse at 50% 100%, rgba(234, 179, 8, 0.3) 0%, transparent 50%),
+  linear-gradient(90deg, 
+    rgba(15, 10, 30, 0.95) 0%, 
+    rgba(26, 18, 50, 0.88) 25%, 
+    rgba(45, 30, 80, 0.85) 50%, 
+    rgba(26, 18, 50, 0.88) 75%, 
+    rgba(15, 10, 30, 0.95) 100%
+  )
+`;
 
 // ==================== HELPERS ====================
 const pad = (n: number) => n.toString().padStart(2, '0');
@@ -470,9 +496,6 @@ function App() {
   const [scheduleTitle, setScheduleTitle] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   
-  // Background images as data URLs for html2canvas compatibility
-  const [bgImages, setBgImages] = useState<{ vertical: string; horizontal: string } | null>(null);
-
   // New item
   const [newHour, setNewHour] = useState(8);
   const [newMinute, setNewMinute] = useState(0);
@@ -481,39 +504,6 @@ function App() {
   const [newIcon, setNewIcon] = useState('✨');
 
   const previewRef = useRef<HTMLDivElement>(null);
-
-  // Load background images as data URLs for html2canvas
-  useEffect(() => {
-    const loadImages = async () => {
-      try {
-        const [verticalBlob, horizontalBlob] = await Promise.all([
-          fetch(BG_VERTICAL).then(r => r.blob()),
-          fetch(BG_HORIZONTAL).then(r => r.blob())
-        ]);
-        
-        const verticalDataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(verticalBlob);
-        });
-        
-        const horizontalDataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(horizontalBlob);
-        });
-        
-        setBgImages({ vertical: verticalDataUrl, horizontal: horizontalDataUrl });
-      } catch (error) {
-        console.error('Failed to load background images:', error);
-        // Fallback to paths
-        setBgImages({ vertical: BG_VERTICAL, horizontal: BG_HORIZONTAL });
-      }
-    };
-    loadImages();
-  }, []);
 
   // Load schedules
   useEffect(() => {
@@ -627,17 +617,6 @@ function App() {
     persist({ ...current, days: newDays });
   };
 
-  // Preload image before generating
-  const preloadImage = (src: string): Promise<HTMLImageElement> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = src + '?t=' + Date.now(); // Cache bust
-    });
-  };
-
   // Generate
   const generateImage = async () => {
     if (!previewRef.current) return;
@@ -646,15 +625,8 @@ function App() {
       // Wait for fonts
       await document.fonts.ready;
       
-      // Preload background image
-      try {
-        await preloadImage(bgImage);
-      } catch (e) {
-        console.warn('Image preload failed, continuing anyway:', e);
-      }
-      
-      // Small delay to ensure image is rendered
-      await new Promise(r => setTimeout(r, 300));
+      // Small delay to ensure everything is rendered
+      await new Promise(r => setTimeout(r, 500));
       
       const canvas = await html2canvas(previewRef.current, {
         scale: 2,
@@ -663,7 +635,7 @@ function App() {
         allowTaint: true,
         logging: false,
         imageTimeout: 15000,
-        foreignObjectRendering: false,
+        foreignObjectRendering: true,
         ignoreElements: (el) => {
           const element = el as HTMLElement;
           return element.classList?.contains('no-capture') ?? false;
@@ -701,15 +673,15 @@ function App() {
     }
   };
 
-  const bgImage = bgImages ? (orientation === 'vertical' ? bgImages.vertical : bgImages.horizontal) : BG_VERTICAL;
   const aspectRatio = orientation === 'vertical' ? '9 / 16' : '16 / 9';
   const activeDayItems = current?.days[activeDay]?.items || [];
   const weekDates = current ? getWeekDates(current.weekStart) : [];
+  const previewBg = orientation === 'vertical' ? CSS_BG_VERTICAL : CSS_BG_HORIZONTAL;
 
   return (
     <div className="min-h-screen relative overflow-x-hidden">
-      {/* Background */}
-      <div className="fixed inset-0 bg-cover bg-center z-0" style={{ backgroundImage: `url(${bgImages?.vertical || BG_VERTICAL})` }} />
+      {/* Background - CSS gradients for reliable capture */}
+      <div className="fixed inset-0 z-0" style={{ background: CSS_BG_VERTICAL }} />
       <div className="fixed inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60 z-0" />
 
       {/* Content */}
@@ -992,14 +964,8 @@ function App() {
                   <div
                     ref={previewRef}
                     className="absolute inset-0 flex flex-col"
+                    style={{ background: previewBg }}
                   >
-                    <img
-                      src={bgImage}
-                      alt=""
-                      crossOrigin="anonymous"
-                      className="absolute inset-0 w-full h-full object-cover"
-                      style={{ pointerEvents: 'none' }}
-                    />
                     <div className="absolute inset-0 flex flex-col">
                       {orientation === 'vertical' ? (
                         <PreviewVertical schedule={current} />
