@@ -617,46 +617,307 @@ function App() {
     persist({ ...current, days: newDays });
   };
 
-  // Generate
+  // Generate image with dedicated capture container
   const generateImage = async () => {
-    if (!previewRef.current) return;
+    if (!current) return;
     setIsGenerating(true);
+    
     try {
-      // Wait for fonts
+      // Wait for fonts to be ready
       await document.fonts.ready;
       
-      // Small delay to ensure everything is rendered
-      await new Promise(r => setTimeout(r, 500));
+      // Create a dedicated capture container
+      const captureContainer = document.createElement('div');
+      const width = orientation === 'vertical' ? 720 : 1280;
+      const height = orientation === 'vertical' ? 1280 : 720;
       
-      const canvas = await html2canvas(previewRef.current, {
+      captureContainer.style.width = `${width}px`;
+      captureContainer.style.height = `${height}px`;
+      captureContainer.style.position = 'fixed';
+      captureContainer.style.left = '-9999px';
+      captureContainer.style.top = '0';
+      captureContainer.style.zIndex = '-9999';
+      
+      // Apply background based on orientation
+      const bgGradient = orientation === 'vertical' 
+        ? 'linear-gradient(180deg, #0f0a1e 0%, #1a1232 30%, #2d1e50 60%, #1a1232 80%, #0f0a1e 100%)'
+        : 'linear-gradient(90deg, #0f0a1e 0%, #1a1232 25%, #2d1e50 50%, #1a1232 75%, #0f0a1e 100%)';
+      
+      captureContainer.style.background = bgGradient;
+      captureContainer.style.borderRadius = '0';
+      captureContainer.style.overflow = 'hidden';
+      captureContainer.style.fontFamily = 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+      
+      // Create inner content container
+      const innerContainer = document.createElement('div');
+      innerContainer.style.width = '100%';
+      innerContainer.style.height = '100%';
+      innerContainer.style.display = 'flex';
+      innerContainer.style.flexDirection = 'column';
+      innerContainer.style.padding = '40px';
+      innerContainer.style.boxSizing = 'border-box';
+      innerContainer.style.color = '#fef3c7';
+      
+      // Add title
+      const titleEl = document.createElement('h1');
+      titleEl.textContent = scheduleTitle || 'ДУХОВНОЕ РАСПИСАНИЕ';
+      titleEl.style.fontSize = '32px';
+      titleEl.style.fontWeight = '300';
+      titleEl.style.letterSpacing = '0.2em';
+      titleEl.style.textAlign = 'center';
+      titleEl.style.marginBottom = '30px';
+      titleEl.style.color = '#fef3c7';
+      titleEl.style.textTransform = 'uppercase';
+      innerContainer.appendChild(titleEl);
+      
+      // Add week range
+      const weekRangeEl = document.createElement('div');
+      weekRangeEl.textContent = formatWeekRange(current.weekStart);
+      weekRangeEl.style.fontSize = '16px';
+      weekRangeEl.style.textAlign = 'center';
+      weekRangeEl.style.marginBottom = '30px';
+      weekRangeEl.style.color = '#fbbf24';
+      weekRangeEl.style.letterSpacing = '0.1em';
+      innerContainer.appendChild(weekRangeEl);
+      
+      // Render schedule content based on orientation
+      if (orientation === 'vertical') {
+        // Vertical layout - days as rows
+        const daysContainer = document.createElement('div');
+        daysContainer.style.flex = '1';
+        daysContainer.style.display = 'flex';
+        daysContainer.style.flexDirection = 'column';
+        daysContainer.style.gap = '16px';
+        daysContainer.style.overflow = 'hidden';
+        
+        current.days.forEach((day, dayIndex) => {
+          const dayEl = document.createElement('div');
+          dayEl.style.background = 'rgba(255, 255, 255, 0.05)';
+          dayEl.style.border = '1px solid rgba(251, 191, 36, 0.2)';
+          dayEl.style.borderRadius = '12px';
+          dayEl.style.padding = '12px 16px';
+          
+          const isWeekend = dayIndex >= 5;
+          if (isWeekend) {
+            dayEl.style.background = 'rgba(251, 191, 36, 0.08)';
+          }
+          
+          // Day header
+          const dayHeaderEl = document.createElement('div');
+          dayHeaderEl.style.display = 'flex';
+          dayHeaderEl.style.justifyContent = 'space-between';
+          dayHeaderEl.style.alignItems = 'center';
+          dayHeaderEl.style.marginBottom = '10px';
+          
+          const dayNameEl = document.createElement('span');
+          dayNameEl.textContent = DAY_NAMES_SHORT[dayIndex];
+          dayNameEl.style.fontSize = '14px';
+          dayNameEl.style.fontWeight = '600';
+          dayNameEl.style.color = '#fbbf24';
+          dayNameEl.style.letterSpacing = '0.1em';
+          
+          const dateEl = document.createElement('span');
+          const date = weekDates[dayIndex];
+          dateEl.textContent = date ? `${date.getDate()} ${MONTH_NAMES[date.getMonth()].slice(0, 3)}` : '';
+          dateEl.style.fontSize = '12px';
+          dateEl.style.color = '#fbbf24';
+          dateEl.style.opacity = '0.7';
+          
+          dayHeaderEl.appendChild(dayNameEl);
+          dayHeaderEl.appendChild(dateEl);
+          dayEl.appendChild(dayHeaderEl);
+          
+          // Items
+          if (day.items.length > 0) {
+            const itemsContainer = document.createElement('div');
+            itemsContainer.style.display = 'flex';
+            itemsContainer.style.flexDirection = 'column';
+            itemsContainer.style.gap = '6px';
+            
+            day.items.forEach(item => {
+              const itemEl = document.createElement('div');
+              itemEl.style.display = 'flex';
+              itemEl.style.alignItems = 'center';
+              itemEl.style.gap = '10px';
+              itemEl.style.padding = '6px 0';
+              
+              const iconEl = document.createElement('span');
+              iconEl.textContent = item.icon;
+              iconEl.style.fontSize = '16px';
+              
+              const timeEl = document.createElement('span');
+              timeEl.textContent = item.time;
+              timeEl.style.fontSize = '13px';
+              timeEl.style.fontFamily = 'monospace';
+              timeEl.style.color = '#fbbf24';
+              timeEl.style.minWidth = '45px';
+              
+              const titleElItem = document.createElement('span');
+              titleElItem.textContent = item.title;
+              titleElItem.style.fontSize = '14px';
+              titleElItem.style.color = '#fef3c7';
+              titleElItem.style.flex = '1';
+              titleElItem.style.whiteSpace = 'nowrap';
+              titleElItem.style.overflow = 'hidden';
+              titleElItem.style.textOverflow = 'ellipsis';
+              
+              itemEl.appendChild(iconEl);
+              itemEl.appendChild(timeEl);
+              itemEl.appendChild(titleElItem);
+              itemsContainer.appendChild(itemEl);
+            });
+            
+            dayEl.appendChild(itemsContainer);
+          } else {
+            const emptyEl = document.createElement('div');
+            emptyEl.textContent = '—';
+            emptyEl.style.fontSize = '20px';
+            emptyEl.style.color = '#fbbf24';
+            emptyEl.style.opacity = '0.5';
+            emptyEl.style.textAlign = 'center';
+            emptyEl.style.padding = '10px 0';
+            dayEl.appendChild(emptyEl);
+          }
+          
+          daysContainer.appendChild(dayEl);
+        });
+        
+        innerContainer.appendChild(daysContainer);
+      } else {
+        // Horizontal layout - days as columns
+        const gridContainer = document.createElement('div');
+        gridContainer.style.flex = '1';
+        gridContainer.style.display = 'grid';
+        gridContainer.style.gridTemplateColumns = 'repeat(7, 1fr)';
+        gridContainer.style.gap = '12px';
+        gridContainer.style.overflow = 'hidden';
+        
+        current.days.forEach((day, dayIndex) => {
+          const dayEl = document.createElement('div');
+          dayEl.style.background = 'rgba(255, 255, 255, 0.05)';
+          dayEl.style.border = '1px solid rgba(251, 191, 36, 0.2)';
+          dayEl.style.borderRadius = '12px';
+          dayEl.style.padding = '10px';
+          dayEl.style.display = 'flex';
+          dayEl.style.flexDirection = 'column';
+          
+          const isWeekend = dayIndex >= 5;
+          if (isWeekend) {
+            dayEl.style.background = 'rgba(251, 191, 36, 0.08)';
+          }
+          
+          // Day header
+          const dayHeaderEl = document.createElement('div');
+          dayHeaderEl.style.textAlign = 'center';
+          dayHeaderEl.style.marginBottom = '10px';
+          dayHeaderEl.style.paddingBottom = '8px';
+          dayHeaderEl.style.borderBottom = '1px solid rgba(251, 191, 36, 0.2)';
+          
+          const dayNameEl = document.createElement('div');
+          dayNameEl.textContent = DAY_NAMES_SHORT[dayIndex];
+          dayNameEl.style.fontSize = '12px';
+          dayNameEl.style.fontWeight = '600';
+          dayNameEl.style.color = '#fbbf24';
+          dayNameEl.style.letterSpacing = '0.1em';
+          dayNameEl.style.marginBottom = '4px';
+          
+          const dateEl = document.createElement('div');
+          const date = weekDates[dayIndex];
+          dateEl.textContent = date ? `${date.getDate()}` : '';
+          dateEl.style.fontSize = '18px';
+          dayEl.style.color = '#fef3c7';
+          dateEl.style.fontWeight = '600';
+          
+          dayHeaderEl.appendChild(dayNameEl);
+          dayHeaderEl.appendChild(dateEl);
+          dayEl.appendChild(dayHeaderEl);
+          
+          // Items
+          const itemsContainer = document.createElement('div');
+          itemsContainer.style.flex = '1';
+          itemsContainer.style.display = 'flex';
+          itemsContainer.style.flexDirection = 'column';
+          itemsContainer.style.gap = '4px';
+          itemsContainer.style.overflow = 'hidden';
+          
+          if (day.items.length > 0) {
+            day.items.forEach(item => {
+              const itemEl = document.createElement('div');
+              itemEl.style.display = 'flex';
+              itemEl.style.alignItems = 'center';
+              itemEl.style.gap = '6px';
+              itemEl.style.padding = '4px 0';
+              
+              const iconEl = document.createElement('span');
+              iconEl.textContent = item.icon;
+              iconEl.style.fontSize = '12px';
+              
+              const timeEl = document.createElement('span');
+              timeEl.textContent = item.time;
+              timeEl.style.fontSize = '10px';
+              timeEl.style.fontFamily = 'monospace';
+              timeEl.style.color = '#fbbf24';
+              timeEl.style.minWidth = '35px';
+              
+              const titleElItem = document.createElement('span');
+              titleElItem.textContent = item.title;
+              titleElItem.style.fontSize = '10px';
+              titleElItem.style.color = '#fef3c7';
+              titleElItem.style.flex = '1';
+              titleElItem.style.whiteSpace = 'nowrap';
+              titleElItem.style.overflow = 'hidden';
+              titleElItem.style.textOverflow = 'ellipsis';
+              
+              itemEl.appendChild(iconEl);
+              itemEl.appendChild(timeEl);
+              itemEl.appendChild(titleElItem);
+              itemsContainer.appendChild(itemEl);
+            });
+          } else {
+            const emptyEl = document.createElement('div');
+            emptyEl.textContent = '—';
+            emptyEl.style.fontSize = '16px';
+            emptyEl.style.color = '#fbbf24';
+            emptyEl.style.opacity = '0.5';
+            emptyEl.style.textAlign = 'center';
+            emptyEl.style.padding = '10px 0';
+            itemsContainer.appendChild(emptyEl);
+          }
+          
+          dayEl.appendChild(itemsContainer);
+          gridContainer.appendChild(dayEl);
+        });
+        
+        innerContainer.appendChild(gridContainer);
+      }
+      
+      captureContainer.appendChild(innerContainer);
+      document.body.appendChild(captureContainer);
+      
+      // Wait for DOM to render
+      await new Promise(r => setTimeout(r, 300));
+      
+      // Capture with html2canvas
+      const canvas = await html2canvas(captureContainer, {
         scale: 2,
-        backgroundColor: '#1a1a2e',
+        backgroundColor: '#0f0a1e',
         useCORS: true,
         allowTaint: true,
         logging: false,
-        imageTimeout: 15000,
-        foreignObjectRendering: true,
-        ignoreElements: (el) => {
-          const element = el as HTMLElement;
-          return element.classList?.contains('no-capture') ?? false;
-        },
+        imageTimeout: 0,
+        foreignObjectRendering: false,
+        width: width,
+        height: height,
       });
       
-      // Check if canvas is empty
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const isEmpty = imageData.data.every((val, i) => i % 4 === 3 || val === 0);
-        if (isEmpty) {
-          console.warn('Canvas appears empty, trying alternative method...');
-        }
-      }
+      // Remove capture container
+      document.body.removeChild(captureContainer);
       
+      // Convert to data URL and download
       const dataUrl = canvas.toDataURL('image/png', 1.0);
       
-      // Verify dataUrl is valid
       if (dataUrl.length < 1000) {
-        throw new Error('Generated image is too small, likely empty');
+        throw new Error('Generated image is too small');
       }
       
       const link = document.createElement('a');
@@ -665,6 +926,7 @@ function App() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      
     } catch (error) {
       console.error('Failed to generate:', error);
       alert('Не удалось сгенерировать изображение. Попробуйте ещё раз.');
