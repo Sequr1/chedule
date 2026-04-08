@@ -1,0 +1,27 @@
+{
+  "name": "Духовное Расписание",
+  "short_name": "Расписание",
+  "description": "Приложение для создания красивого расписания на неделю в формате 16:9 и 9:16",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#f59e0b",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "lifestyle"],
+  "lang": "ru",
+  "dir": "ltr"
+}
