@@ -58,8 +58,8 @@ const ICON_OPTIONS = [
   { value: '🧵', label: 'Нити' },
 ];
 
-const BG_VERTICAL = '/images/luxury-background.jpg';
-const BG_HORIZONTAL = '/images/bg-horizontal.jpg';
+export const BG_VERTICAL = '/images/luxury-background.jpg';
+export const BG_HORIZONTAL = '/images/bg-horizontal.jpg';
 
 // ==================== HELPERS ====================
 const pad = (n: number) => n.toString().padStart(2, '0');
@@ -469,6 +469,9 @@ function App() {
   const [orientation, setOrientation] = useState<Orientation>('vertical');
   const [scheduleTitle, setScheduleTitle] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Background images as data URLs for html2canvas compatibility
+  const [bgImages, setBgImages] = useState<{ vertical: string; horizontal: string } | null>(null);
 
   // New item
   const [newHour, setNewHour] = useState(8);
@@ -479,7 +482,40 @@ function App() {
 
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // Load
+  // Load background images as data URLs for html2canvas
+  useEffect(() => {
+    const loadImages = async () => {
+      try {
+        const [verticalBlob, horizontalBlob] = await Promise.all([
+          fetch(BG_VERTICAL).then(r => r.blob()),
+          fetch(BG_HORIZONTAL).then(r => r.blob())
+        ]);
+        
+        const verticalDataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(verticalBlob);
+        });
+        
+        const horizontalDataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(horizontalBlob);
+        });
+        
+        setBgImages({ vertical: verticalDataUrl, horizontal: horizontalDataUrl });
+      } catch (error) {
+        console.error('Failed to load background images:', error);
+        // Fallback to paths
+        setBgImages({ vertical: BG_VERTICAL, horizontal: BG_HORIZONTAL });
+      }
+    };
+    loadImages();
+  }, []);
+
+  // Load schedules
   useEffect(() => {
     const saved = localStorage.getItem('spiritual-week-schedules-v3');
     if (saved) {
@@ -591,31 +627,69 @@ function App() {
     persist({ ...current, days: newDays });
   };
 
+  // Preload image before generating
+  const preloadImage = (src: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src + '?t=' + Date.now(); // Cache bust
+    });
+  };
+
   // Generate
   const generateImage = async () => {
     if (!previewRef.current) return;
     setIsGenerating(true);
     try {
-      // Wait for images to load
+      // Wait for fonts
       await document.fonts.ready;
+      
+      // Preload background image
+      try {
+        await preloadImage(bgImage);
+      } catch (e) {
+        console.warn('Image preload failed, continuing anyway:', e);
+      }
+      
+      // Small delay to ensure image is rendered
+      await new Promise(r => setTimeout(r, 300));
       
       const canvas = await html2canvas(previewRef.current, {
         scale: 2,
         backgroundColor: '#1a1a2e',
         useCORS: true,
-        allowTaint: false,
+        allowTaint: true,
         logging: false,
-        imageTimeout: 0,
-        foreignObjectRendering: true,
+        imageTimeout: 15000,
+        foreignObjectRendering: false,
         ignoreElements: (el) => {
           const element = el as HTMLElement;
           return element.classList?.contains('no-capture') ?? false;
         },
       });
       
+      // Check if canvas is empty
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const isEmpty = imageData.data.every((val, i) => i % 4 === 3 || val === 0);
+        if (isEmpty) {
+          console.warn('Canvas appears empty, trying alternative method...');
+        }
+      }
+      
+      const dataUrl = canvas.toDataURL('image/png', 1.0);
+      
+      // Verify dataUrl is valid
+      if (dataUrl.length < 1000) {
+        throw new Error('Generated image is too small, likely empty');
+      }
+      
       const link = document.createElement('a');
       link.download = `schedule-${scheduleTitle || 'week'}-${orientation}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.href = dataUrl;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -627,7 +701,7 @@ function App() {
     }
   };
 
-  const bgImage = orientation === 'vertical' ? BG_VERTICAL : BG_HORIZONTAL;
+  const bgImage = bgImages ? (orientation === 'vertical' ? bgImages.vertical : bgImages.horizontal) : BG_VERTICAL;
   const aspectRatio = orientation === 'vertical' ? '9 / 16' : '16 / 9';
   const activeDayItems = current?.days[activeDay]?.items || [];
   const weekDates = current ? getWeekDates(current.weekStart) : [];
@@ -635,7 +709,7 @@ function App() {
   return (
     <div className="min-h-screen relative overflow-x-hidden">
       {/* Background */}
-      <div className="fixed inset-0 bg-cover bg-center z-0" style={{ backgroundImage: `url(${BG_VERTICAL})` }} />
+      <div className="fixed inset-0 bg-cover bg-center z-0" style={{ backgroundImage: `url(${bgImages?.vertical || BG_VERTICAL})` }} />
       <div className="fixed inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60 z-0" />
 
       {/* Content */}
@@ -922,6 +996,7 @@ function App() {
                     <img
                       src={bgImage}
                       alt=""
+                      crossOrigin="anonymous"
                       className="absolute inset-0 w-full h-full object-cover"
                       style={{ pointerEvents: 'none' }}
                     />
