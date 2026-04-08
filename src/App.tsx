@@ -596,20 +596,32 @@ function App() {
     if (!previewRef.current) return;
     setIsGenerating(true);
     try {
+      // Wait for images to load
+      await document.fonts.ready;
+      
       const canvas = await html2canvas(previewRef.current, {
-        scale: 3,
-        backgroundColor: null,
+        scale: 2,
+        backgroundColor: '#1a1a2e',
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
+        logging: false,
+        imageTimeout: 0,
+        foreignObjectRendering: true,
+        ignoreElements: (el) => {
+          const element = el as HTMLElement;
+          return element.classList?.contains('no-capture') ?? false;
+        },
       });
+      
       const link = document.createElement('a');
       link.download = `schedule-${scheduleTitle || 'week'}-${orientation}.png`;
       link.href = canvas.toDataURL('image/png');
-      ocument.body.appendChild(link);
+      document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } catch (error) {
       console.error('Failed to generate:', error);
+      alert('Не удалось сгенерировать изображение. Попробуйте ещё раз.');
     } finally {
       setIsGenerating(false);
     }
@@ -905,18 +917,21 @@ function App() {
                 >
                   <div
                     ref={previewRef}
-                    className="absolute inset-0"
-                    style={{
-                      backgroundImage: `url(${bgImage})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                    }}
+                    className="absolute inset-0 flex flex-col"
                   >
-                    {orientation === 'vertical' ? (
-                      <PreviewVertical schedule={current} />
-                    ) : (
-                      <PreviewHorizontal schedule={current} />
-                    )}
+                    <img
+                      src={bgImage}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-cover"
+                      style={{ pointerEvents: 'none' }}
+                    />
+                    <div className="absolute inset-0 flex flex-col">
+                      {orientation === 'vertical' ? (
+                        <PreviewVertical schedule={current} />
+                      ) : (
+                        <PreviewHorizontal schedule={current} />
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
