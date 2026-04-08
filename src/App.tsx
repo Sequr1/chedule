@@ -626,10 +626,10 @@ function App() {
       // Wait for fonts to be ready
       await document.fonts.ready;
       
-      // Create a dedicated capture container
+      // Create a dedicated capture container - larger size for better quality
       const captureContainer = document.createElement('div');
-      const width = orientation === 'vertical' ? 720 : 1280;
-      const height = orientation === 'vertical' ? 1280 : 720;
+      const width = orientation === 'vertical' ? 1080 : 1920;
+      const height = orientation === 'vertical' ? 1920 : 1080;
       
       captureContainer.style.width = `${width}px`;
       captureContainer.style.height = `${height}px`;
@@ -654,30 +654,31 @@ function App() {
       innerContainer.style.height = '100%';
       innerContainer.style.display = 'flex';
       innerContainer.style.flexDirection = 'column';
-      innerContainer.style.padding = '40px';
+      innerContainer.style.padding = '60px';
       innerContainer.style.boxSizing = 'border-box';
       innerContainer.style.color = '#fef3c7';
       
-      // Add title
+      // Add title - larger and more readable
       const titleEl = document.createElement('h1');
       titleEl.textContent = scheduleTitle || 'ДУХОВНОЕ РАСПИСАНИЕ';
-      titleEl.style.fontSize = '32px';
+      titleEl.style.fontSize = '56px';
       titleEl.style.fontWeight = '300';
-      titleEl.style.letterSpacing = '0.2em';
+      titleEl.style.letterSpacing = '0.25em';
       titleEl.style.textAlign = 'center';
-      titleEl.style.marginBottom = '30px';
+      titleEl.style.marginBottom = '20px';
       titleEl.style.color = '#fef3c7';
       titleEl.style.textTransform = 'uppercase';
+      titleEl.style.lineHeight = '1.2';
       innerContainer.appendChild(titleEl);
       
-      // Add week range
+      // Add week range - larger and more readable
       const weekRangeEl = document.createElement('div');
       weekRangeEl.textContent = formatWeekRange(current.weekStart);
-      weekRangeEl.style.fontSize = '16px';
+      weekRangeEl.style.fontSize = '24px';
       weekRangeEl.style.textAlign = 'center';
-      weekRangeEl.style.marginBottom = '30px';
+      weekRangeEl.style.marginBottom = '40px';
       weekRangeEl.style.color = '#fbbf24';
-      weekRangeEl.style.letterSpacing = '0.1em';
+      weekRangeEl.style.letterSpacing = '0.15em';
       innerContainer.appendChild(weekRangeEl);
       
       // Render schedule content based on orientation
@@ -687,15 +688,15 @@ function App() {
         daysContainer.style.flex = '1';
         daysContainer.style.display = 'flex';
         daysContainer.style.flexDirection = 'column';
-        daysContainer.style.gap = '16px';
+        daysContainer.style.gap = '24px';
         daysContainer.style.overflow = 'hidden';
         
         current.days.forEach((day, dayIndex) => {
           const dayEl = document.createElement('div');
           dayEl.style.background = 'rgba(255, 255, 255, 0.05)';
           dayEl.style.border = '1px solid rgba(251, 191, 36, 0.2)';
-          dayEl.style.borderRadius = '12px';
-          dayEl.style.padding = '12px 16px';
+          dayEl.style.borderRadius = '16px';
+          dayEl.style.padding = '20px 24px';
           
           const isWeekend = dayIndex >= 5;
           if (isWeekend) {
@@ -707,19 +708,19 @@ function App() {
           dayHeaderEl.style.display = 'flex';
           dayHeaderEl.style.justifyContent = 'space-between';
           dayHeaderEl.style.alignItems = 'center';
-          dayHeaderEl.style.marginBottom = '10px';
+          dayHeaderEl.style.marginBottom = '16px';
           
           const dayNameEl = document.createElement('span');
           dayNameEl.textContent = DAY_NAMES_SHORT[dayIndex];
-          dayNameEl.style.fontSize = '14px';
+          dayNameEl.style.fontSize = '22px';
           dayNameEl.style.fontWeight = '600';
           dayNameEl.style.color = '#fbbf24';
-          dayNameEl.style.letterSpacing = '0.1em';
+          dayNameEl.style.letterSpacing = '0.12em';
           
           const dateEl = document.createElement('span');
           const date = weekDates[dayIndex];
           dateEl.textContent = date ? `${date.getDate()} ${MONTH_NAMES[date.getMonth()].slice(0, 3)}` : '';
-          dateEl.style.fontSize = '12px';
+          dateEl.style.fontSize = '18px';
           dateEl.style.color = '#fbbf24';
           dateEl.style.opacity = '0.7';
           
@@ -732,13 +733,136 @@ function App() {
             const itemsContainer = document.createElement('div');
             itemsContainer.style.display = 'flex';
             itemsContainer.style.flexDirection = 'column';
-            itemsContainer.style.gap = '6px';
+            itemsContainer.style.gap = '10px';
             
             day.items.forEach(item => {
               const itemEl = document.createElement('div');
               itemEl.style.display = 'flex';
               itemEl.style.alignItems = 'center';
-              itemEl.style.gap = '10px';
+              itemEl.style.gap = '14px';
+              itemEl.style.padding = '8px 0';
+              
+              const iconEl = document.createElement('span');
+              iconEl.textContent = item.icon;
+              iconEl.style.fontSize = '24px';
+              
+              const timeEl = document.createElement('span');
+              timeEl.textContent = item.time;
+              timeEl.style.fontSize = '20px';
+              timeEl.style.fontFamily = 'monospace';
+              timeEl.style.color = '#fbbf24';
+              timeEl.style.minWidth = '70px';
+              timeEl.style.fontWeight = '500';
+              
+              const titleElItem = document.createElement('span');
+              titleElItem.textContent = item.title;
+              titleElItem.style.fontSize = '20px';
+              titleElItem.style.color = '#fef3c7';
+              titleElItem.style.flex = '1';
+              titleElItem.style.whiteSpace = 'nowrap';
+              titleElItem.style.overflow = 'hidden';
+              titleElItem.style.textOverflow = 'ellipsis';
+              
+              // Description - small but readable
+              if (item.description) {
+                const descEl = document.createElement('span');
+                descEl.textContent = item.description;
+                descEl.style.fontSize = '14px';
+                descEl.style.color = '#fbbf24';
+                descEl.style.opacity = '0.6';
+                descEl.style.marginLeft = '10px';
+                descEl.style.flex = '1';
+                descEl.style.whiteSpace = 'nowrap';
+                descEl.style.overflow = 'hidden';
+                descEl.style.textOverflow = 'ellipsis';
+                itemEl.appendChild(descEl);
+              }
+              
+              itemEl.appendChild(iconEl);
+              itemEl.appendChild(timeEl);
+              itemEl.appendChild(titleElItem);
+              itemsContainer.appendChild(itemEl);
+            });
+            
+            dayEl.appendChild(itemsContainer);
+          } else {
+            const emptyEl = document.createElement('div');
+            emptyEl.textContent = '—';
+            emptyEl.style.fontSize = '28px';
+            emptyEl.style.color = '#fbbf24';
+            emptyEl.style.opacity = '0.5';
+            emptyEl.style.textAlign = 'center';
+            emptyEl.style.padding = '16px 0';
+            dayEl.appendChild(emptyEl);
+          }
+          
+          daysContainer.appendChild(dayEl);
+        });
+        
+        innerContainer.appendChild(daysContainer);
+      } else {
+        // Horizontal layout - days as columns
+        const gridContainer = document.createElement('div');
+        gridContainer.style.flex = '1';
+        gridContainer.style.display = 'grid';
+        gridContainer.style.gridTemplateColumns = 'repeat(7, 1fr)';
+        gridContainer.style.gap = '16px';
+        gridContainer.style.overflow = 'hidden';
+        
+        current.days.forEach((day, dayIndex) => {
+          const dayEl = document.createElement('div');
+          dayEl.style.background = 'rgba(255, 255, 255, 0.05)';
+          dayEl.style.border = '1px solid rgba(251, 191, 36, 0.2)';
+          dayEl.style.borderRadius = '16px';
+          dayEl.style.padding = '16px';
+          dayEl.style.display = 'flex';
+          dayEl.style.flexDirection = 'column';
+          
+          const isWeekend = dayIndex >= 5;
+          if (isWeekend) {
+            dayEl.style.background = 'rgba(251, 191, 36, 0.08)';
+          }
+          
+          // Day header
+          const dayHeaderEl = document.createElement('div');
+          dayHeaderEl.style.textAlign = 'center';
+          dayHeaderEl.style.marginBottom = '14px';
+          dayHeaderEl.style.paddingBottom = '12px';
+          dayHeaderEl.style.borderBottom = '1px solid rgba(251, 191, 36, 0.2)';
+          
+          const dayNameEl = document.createElement('div');
+          dayNameEl.textContent = DAY_NAMES_SHORT[dayIndex];
+          dayNameEl.style.fontSize = '16px';
+          dayNameEl.style.fontWeight = '600';
+          dayNameEl.style.color = '#fbbf24';
+          dayNameEl.style.letterSpacing = '0.12em';
+          dayNameEl.style.marginBottom = '6px';
+          
+          const dateEl = document.createElement('div');
+          const date = weekDates[dayIndex];
+          dateEl.textContent = date ? `${date.getDate()}` : '';
+          dateEl.style.fontSize = '28px';
+          dateEl.style.color = '#fef3c7';
+          dateEl.style.fontWeight = '600';
+          
+          dayHeaderEl.appendChild(dayNameEl);
+          dayHeaderEl.appendChild(dateEl);
+          dayEl.appendChild(dayHeaderEl);
+          
+          // Items
+          const itemsContainer = document.createElement('div');
+          itemsContainer.style.flex = '1';
+          itemsContainer.style.display = 'flex';
+          itemsContainer.style.flexDirection = 'column';
+          itemsContainer.style.gap = '8px';
+          itemsContainer.style.overflow = 'hidden';
+          
+          if (day.items.length > 0) {
+            day.items.forEach(item => {
+              const itemEl = document.createElement('div');
+              itemEl.style.display = 'flex';
+              itemEl.style.alignItems = 'center';
+              itemEl.style.gap = '8px';
               itemEl.style.padding = '6px 0';
               
               const iconEl = document.createElement('span');
@@ -747,10 +871,11 @@ function App() {
               
               const timeEl = document.createElement('span');
               timeEl.textContent = item.time;
-              timeEl.style.fontSize = '13px';
+              timeEl.style.fontSize = '14px';
               timeEl.style.fontFamily = 'monospace';
               timeEl.style.color = '#fbbf24';
-              timeEl.style.minWidth = '45px';
+              timeEl.style.minWidth = '50px';
+              timeEl.style.fontWeight = '500';
               
               const titleElItem = document.createElement('span');
               titleElItem.textContent = item.title;
@@ -766,121 +891,14 @@ function App() {
               itemEl.appendChild(titleElItem);
               itemsContainer.appendChild(itemEl);
             });
-            
-            dayEl.appendChild(itemsContainer);
           } else {
             const emptyEl = document.createElement('div');
             emptyEl.textContent = '—';
-            emptyEl.style.fontSize = '20px';
+            emptyEl.style.fontSize = '24px';
             emptyEl.style.color = '#fbbf24';
             emptyEl.style.opacity = '0.5';
             emptyEl.style.textAlign = 'center';
-            emptyEl.style.padding = '10px 0';
-            dayEl.appendChild(emptyEl);
-          }
-          
-          daysContainer.appendChild(dayEl);
-        });
-        
-        innerContainer.appendChild(daysContainer);
-      } else {
-        // Horizontal layout - days as columns
-        const gridContainer = document.createElement('div');
-        gridContainer.style.flex = '1';
-        gridContainer.style.display = 'grid';
-        gridContainer.style.gridTemplateColumns = 'repeat(7, 1fr)';
-        gridContainer.style.gap = '12px';
-        gridContainer.style.overflow = 'hidden';
-        
-        current.days.forEach((day, dayIndex) => {
-          const dayEl = document.createElement('div');
-          dayEl.style.background = 'rgba(255, 255, 255, 0.05)';
-          dayEl.style.border = '1px solid rgba(251, 191, 36, 0.2)';
-          dayEl.style.borderRadius = '12px';
-          dayEl.style.padding = '10px';
-          dayEl.style.display = 'flex';
-          dayEl.style.flexDirection = 'column';
-          
-          const isWeekend = dayIndex >= 5;
-          if (isWeekend) {
-            dayEl.style.background = 'rgba(251, 191, 36, 0.08)';
-          }
-          
-          // Day header
-          const dayHeaderEl = document.createElement('div');
-          dayHeaderEl.style.textAlign = 'center';
-          dayHeaderEl.style.marginBottom = '10px';
-          dayHeaderEl.style.paddingBottom = '8px';
-          dayHeaderEl.style.borderBottom = '1px solid rgba(251, 191, 36, 0.2)';
-          
-          const dayNameEl = document.createElement('div');
-          dayNameEl.textContent = DAY_NAMES_SHORT[dayIndex];
-          dayNameEl.style.fontSize = '12px';
-          dayNameEl.style.fontWeight = '600';
-          dayNameEl.style.color = '#fbbf24';
-          dayNameEl.style.letterSpacing = '0.1em';
-          dayNameEl.style.marginBottom = '4px';
-          
-          const dateEl = document.createElement('div');
-          const date = weekDates[dayIndex];
-          dateEl.textContent = date ? `${date.getDate()}` : '';
-          dateEl.style.fontSize = '18px';
-          dayEl.style.color = '#fef3c7';
-          dateEl.style.fontWeight = '600';
-          
-          dayHeaderEl.appendChild(dayNameEl);
-          dayHeaderEl.appendChild(dateEl);
-          dayEl.appendChild(dayHeaderEl);
-          
-          // Items
-          const itemsContainer = document.createElement('div');
-          itemsContainer.style.flex = '1';
-          itemsContainer.style.display = 'flex';
-          itemsContainer.style.flexDirection = 'column';
-          itemsContainer.style.gap = '4px';
-          itemsContainer.style.overflow = 'hidden';
-          
-          if (day.items.length > 0) {
-            day.items.forEach(item => {
-              const itemEl = document.createElement('div');
-              itemEl.style.display = 'flex';
-              itemEl.style.alignItems = 'center';
-              itemEl.style.gap = '6px';
-              itemEl.style.padding = '4px 0';
-              
-              const iconEl = document.createElement('span');
-              iconEl.textContent = item.icon;
-              iconEl.style.fontSize = '12px';
-              
-              const timeEl = document.createElement('span');
-              timeEl.textContent = item.time;
-              timeEl.style.fontSize = '10px';
-              timeEl.style.fontFamily = 'monospace';
-              timeEl.style.color = '#fbbf24';
-              timeEl.style.minWidth = '35px';
-              
-              const titleElItem = document.createElement('span');
-              titleElItem.textContent = item.title;
-              titleElItem.style.fontSize = '10px';
-              titleElItem.style.color = '#fef3c7';
-              titleElItem.style.flex = '1';
-              titleElItem.style.whiteSpace = 'nowrap';
-              titleElItem.style.overflow = 'hidden';
-              titleElItem.style.textOverflow = 'ellipsis';
-              
-              itemEl.appendChild(iconEl);
-              itemEl.appendChild(timeEl);
-              itemEl.appendChild(titleElItem);
-              itemsContainer.appendChild(itemEl);
-            });
-          } else {
-            const emptyEl = document.createElement('div');
-            emptyEl.textContent = '—';
-            emptyEl.style.fontSize = '16px';
-            emptyEl.style.color = '#fbbf24';
-            emptyEl.style.opacity = '0.5';
-            emptyEl.style.textAlign = 'center';
-            emptyEl.style.padding = '10px 0';
+            emptyEl.style.padding = '16px 0';
             itemsContainer.appendChild(emptyEl);
           }
           
@@ -899,15 +917,15 @@ function App() {
       
       // Capture with html2canvas
       const canvas = await html2canvas(captureContainer, {
-        scale: 2,
+        scale: 1,
         backgroundColor: '#0f0a1e',
         useCORS: true,
         allowTaint: true,
         logging: false,
         imageTimeout: 0,
-        foreignObjectRendering: false,
-        width: width,
-        height: height,
+        foreignObjectRendering: true,
+        windowWidth: width,
+        windowHeight: height,
       });
       
       // Remove capture container
