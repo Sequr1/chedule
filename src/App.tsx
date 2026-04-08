@@ -605,7 +605,9 @@ function App() {
       const link = document.createElement('a');
       link.download = `schedule-${scheduleTitle || 'week'}-${orientation}.png`;
       link.href = canvas.toDataURL('image/png');
+      ocument.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
     } catch (error) {
       console.error('Failed to generate:', error);
     } finally {
